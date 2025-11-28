@@ -2,7 +2,7 @@ import ollama
 import json
 from typing import Dict, Any
 
-# 커스텀 모델 이름을 상수로 정의 (필요에 따라 변경 용이)
+# 커스텀 모델 이름을 상수로 정의
 CUSTOM_MODEL_NAME = 'diary-analyzer'
 
 def analyze_diary_with_custom_model(diary_text: str) -> Dict[str, Any]:

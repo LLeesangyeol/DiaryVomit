@@ -1,5 +1,5 @@
 import json
-from ollama_analyzer import analyze_diary_with_custom_model
+from DiaryVomit.src.ai.ollama_analyzer import analyze_diary_with_custom_model
 
 
 def run_tests():

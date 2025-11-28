@@ -1,6 +1,6 @@
 import json
 # 이미 정의된 핵심 분석 함수를 import 합니다.
-from ollama_analyzer import analyze_diary_with_custom_model
+from DiaryVomit.src.ai.ollama_analyzer import analyze_diary_with_custom_model
 
 def analyze_user_diary():
     """
