@@ -4,20 +4,17 @@ from datetime import datetime
 import threading, sys, os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 try:
     from ollama_analyzer import analyze_diary_with_custom_model
     HAS_ANALYZER = True
 except: HAS_ANALYZER = False
 
-<<<<<<< HEAD
-from diary_db import init_db as init_diary_db
+from DiaryVomit.src.application.diary_db2 import init_db as init_diary_db
 from user_db import init_db as init_user_db
 
-from diary_db import save_diary_to_db, get_all_diaries, get_diaries_for_stats
+from DiaryVomit.src.application.diary_db2 import save_diary_to_db, get_all_diaries, get_diaries_for_stats
 from user_db import login, get_profile, register, ValidationError, UserAlreadyExists
-=======
-from diary_db import init_db, save_diary_to_db, get_all_diaries, get_diaries_for_stats
->>>>>>> dev
 
 class MoodTrackerGUI:
     def __init__(self, root):
@@ -34,7 +31,6 @@ class MoodTrackerGUI:
         
         self.colors = {'bg':'#EBF5FB','panel_bg':'#D6EAF8','text':'#1B4F72','text_dim':'#5499C7','button_bg':'#5DADE2','accent':'#3498DB'}
         self.root.configure(bg=self.colors['bg'])
-<<<<<<< HEAD
         init_user_db()
         init_diary_db()
         self.current_analysis = None
@@ -153,13 +149,6 @@ class MoodTrackerGUI:
         messagebox.showinfo("환영합니다", f"{self.current_user}님 환영합니다!")
         self.show_menu()
 
-=======
-        init_db()
-        self.current_analysis = None
-        self.main_content = None
-        self.show_menu()
-    
->>>>>>> dev
     def show_menu(self):
         if self.main_content: self.main_content.destroy()
         self.main_content = tk.Frame(self.root, bg=self.colors['bg'])
@@ -246,14 +235,9 @@ class MoodTrackerGUI:
     def create_history(self, parent):
         frame = tk.Frame(parent, bg=self.colors['bg'])
         frame.pack(fill=tk.BOTH, expand=True)
-<<<<<<< HEAD
         tk.Label(frame, text="내가 쓴 일기", font=("맑은 고딕",16,"bold"),
                 bg=self.colors['bg'], fg=self.colors['text']).pack(pady=(0,15), anchor=tk.W, padx=5)
 
-=======
-        tk.Label(frame, text="내가 쓴 일기", font=("맑은 고딕",16,"bold"), bg=self.colors['bg'], fg=self.colors['text']).pack(pady=(0,15), anchor=tk.W, padx=5)
-        
->>>>>>> dev
         board = tk.Frame(frame, bg='white', relief=tk.SOLID, bd=1)
         board.pack(fill=tk.BOTH, expand=True, pady=(0,12))
 
@@ -261,7 +245,6 @@ class MoodTrackerGUI:
         hdr.pack(fill=tk.X)
         hdr.pack_propagate(False)
         for txt, w in [("날짜",18), ("내용",0), ("감정",12)]:
-<<<<<<< HEAD
             tk.Label(hdr, text=txt, font=("맑은 고딕",11,"bold"),
                     bg=self.colors['accent'], fg='white',
                     width=w, anchor=tk.W if txt=="날짜" else tk.CENTER).pack(
@@ -301,24 +284,6 @@ class MoodTrackerGUI:
 
         self.load_history()
 
-=======
-            tk.Label(hdr, text=txt, font=("맑은 고딕",11,"bold"), bg=self.colors['accent'], fg='white', width=w, anchor=tk.W if txt=="날짜" else tk.CENTER).pack(side=tk.LEFT, fill=tk.X if txt=="내용" else None, expand=txt=="내용", padx=15 if txt!="내용" else 8)
-
-        lf = tk.Frame(board, bg='white')
-        lf.pack(fill=tk.BOTH, expand=True)
-        self.history_canvas = tk.Canvas(lf, bg='white', highlightthickness=0)
-        sb = ttk.Scrollbar(lf, orient="vertical", command=self.history_canvas.yview)
-        self.history_scrollable = tk.Frame(self.history_canvas, bg='white')
-        self.history_scrollable.bind("<Configure>", lambda e: self.history_canvas.configure(scrollregion=self.history_canvas.bbox("all")))
-        self.history_canvas.create_window((0,0), window=self.history_scrollable, anchor="nw")
-        self.history_canvas.configure(yscrollcommand=sb.set)
-        self.history_canvas.pack(side="left", fill="both", expand=True)
-        sb.pack(side="right", fill="y")
-        
-        refresh_btn = tk.Button(frame, text="새로고침", font=("맑은 고딕",12,"bold"), bg=self.colors['button_bg'], fg='white', relief=tk.FLAT, width=16, pady=12, cursor="hand2", command=self.load_history, activebackground='#2980B9', bd=0)
-        refresh_btn.pack()
-        self.load_history()
->>>>>>> dev
     
     def analyze_emotion(self):
         content = self.diary_text.get(1.0, tk.END).strip()
@@ -377,13 +342,8 @@ class MoodTrackerGUI:
             return
         
         try:
-<<<<<<< HEAD
             date_str = datetime.now().strftime(f"%Y-%m-%d %H:%M:%S")
             save_diary_to_db(self.current_user_id, date_str, content, self.current_analysis)
-=======
-            date_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            save_diary_to_db(date_str, content, self.current_analysis)
->>>>>>> dev
             messagebox.showinfo("완료", "일기가 저장되었습니다")
             self.show_menu()
         except Exception as e:
@@ -400,7 +360,6 @@ class MoodTrackerGUI:
         if hasattr(self,'status_label'): self.status_label.config(text="초기화 완료")
     
     def load_history(self):
-<<<<<<< HEAD
         if not self.history_scrollable.winfo_exists():
             return
 
@@ -408,12 +367,6 @@ class MoodTrackerGUI:
         
         try:
             diaries = get_all_diaries(self.current_user_id)
-=======
-        for w in self.history_scrollable.winfo_children(): w.destroy()
-        
-        try:
-            diaries = get_all_diaries()
->>>>>>> dev
             
             if not diaries:
                 empty = tk.Frame(self.history_scrollable, bg='white')
@@ -436,11 +389,7 @@ class MoodTrackerGUI:
     
     def load_stats(self):
         try:
-<<<<<<< HEAD
             all_diaries, emo_sum = get_diaries_for_stats(self.current_user_id)
-=======
-            all_diaries, emo_sum = get_diaries_for_stats()
->>>>>>> dev
             total = len(all_diaries)
             
             weekly_groups = []
