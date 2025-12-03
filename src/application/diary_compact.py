@@ -9,7 +9,15 @@ try:
     HAS_ANALYZER = True
 except: HAS_ANALYZER = False
 
+<<<<<<< HEAD
+from diary_db import init_db as init_diary_db
+from user_db import init_db as init_user_db
+
+from diary_db import save_diary_to_db, get_all_diaries, get_diaries_for_stats
+from user_db import login, get_profile, register, ValidationError, UserAlreadyExists
+=======
 from diary_db import init_db, save_diary_to_db, get_all_diaries, get_diaries_for_stats
+>>>>>>> dev
 
 class MoodTrackerGUI:
     def __init__(self, root):
@@ -26,11 +34,132 @@ class MoodTrackerGUI:
         
         self.colors = {'bg':'#EBF5FB','panel_bg':'#D6EAF8','text':'#1B4F72','text_dim':'#5499C7','button_bg':'#5DADE2','accent':'#3498DB'}
         self.root.configure(bg=self.colors['bg'])
+<<<<<<< HEAD
+        init_user_db()
+        init_diary_db()
+        self.current_analysis = None
+        self.main_content = None
+        self.current_user = None
+        self.current_user_id = None
+
+        self.show_login_screen() 
+    
+    def show_login_screen(self):
+        if self.main_content:
+            self.main_content.destroy()
+
+        self.main_content = tk.Frame(self.root, bg=self.colors['bg'])
+        self.main_content.pack(fill=tk.BOTH, expand=True)
+
+        frame = tk.Frame(self.main_content, bg=self.colors['bg'])
+        frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+
+        tk.Label(frame, text="로그인", font=("맑은 고딕", 30, "bold"),
+                bg=self.colors['bg'], fg=self.colors['accent']).pack(pady=(0, 20))
+
+        tk.Label(frame, text="아이디", font=("맑은 고딕", 12),
+                bg=self.colors['bg'], fg=self.colors['text']).pack(anchor=tk.W)
+        self.login_id = tk.Entry(frame, font=("맑은 고딕", 13))
+        self.login_id.pack(fill=tk.X, pady=6)
+
+        tk.Label(frame, text="비밀번호", font=("맑은 고딕", 12),
+                bg=self.colors['bg'], fg=self.colors['text']).pack(anchor=tk.W)
+        self.login_pw = tk.Entry(frame, font=("맑은 고딕", 13), show="*")
+        self.login_pw.pack(fill=tk.X, pady=6)
+
+        tk.Button(frame, text="로그인", font=("맑은 고딕", 13, "bold"),
+                bg=self.colors['accent'], fg='white', relief=tk.FLAT,
+                width=22, pady=12, cursor="hand2",
+                command=self.do_login).pack(pady=(20, 12))
+
+        tk.Button(frame, text="회원가입", font=("맑은 고딕", 11, "bold"),
+                bg=self.colors['button_bg'], fg='white', relief=tk.FLAT,
+                width=22, pady=10, cursor="hand2",
+                command=self.show_register_screen).pack()
+   
+    def show_register_screen(self):
+        if self.main_content:
+            self.main_content.destroy()
+
+        self.main_content = tk.Frame(self.root, bg=self.colors['bg'])
+        self.main_content.pack(fill=tk.BOTH, expand=True)
+
+        frame = tk.Frame(self.main_content, bg=self.colors['bg'])
+        frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+
+        tk.Label(frame, text="회원가입", font=("맑은 고딕", 30, "bold"),
+                bg=self.colors['bg'], fg=self.colors['accent']).pack(pady=(0, 20))
+
+        tk.Label(frame, text="아이디", font=("맑은 고딕", 12),
+                bg=self.colors['bg'], fg=self.colors['text']).pack(anchor=tk.W)
+        self.reg_id = tk.Entry(frame, font=("맑은 고딕", 13))
+        self.reg_id.pack(fill=tk.X, pady=6)
+
+        tk.Label(frame, text="비밀번호", font=("맑은 고딕", 12),
+                bg=self.colors['bg'], fg=self.colors['text']).pack(anchor=tk.W)
+        self.reg_pw = tk.Entry(frame, font=("맑은 고딕", 13), show="*")
+        self.reg_pw.pack(fill=tk.X, pady=6)
+
+        tk.Label(frame, text="이름", font=("맑은 고딕", 12),
+                bg=self.colors['bg'], fg=self.colors['text']).pack(anchor=tk.W)
+        self.reg_name = tk.Entry(frame, font=("맑은 고딕", 13))
+        self.reg_name.pack(fill=tk.X, pady=6)
+
+        tk.Button(frame, text="가입 완료", font=("맑은 고딕", 13, "bold"),
+                bg=self.colors['accent'], fg='white', relief=tk.FLAT,
+                width=22, pady=12, cursor="hand2",
+                command=self.do_register).pack(pady=(20, 12))
+
+        tk.Button(frame, text="로그인 화면으로", font=("맑은 고딕", 11, "bold"),
+                bg=self.colors['button_bg'], fg='white', relief=tk.FLAT,
+                width=22, pady=10, cursor="hand2",
+                command=self.show_login_screen).pack()
+    
+    def do_register(self):
+        username = self.reg_id.get().strip()
+        password = self.reg_pw.get().strip()
+        name = self.reg_name.get().strip()
+
+        try:
+            register(username, password, name)
+            messagebox.showinfo("완료", "회원가입이 완료되었습니다!")
+            self.show_login_screen()
+
+        except ValidationError as ve:
+            messagebox.showwarning("입력 오류", str(ve))
+
+        except UserAlreadyExists as ue:
+            messagebox.showwarning("중복 아이디", str(ue))
+
+        except Exception as e:
+            messagebox.showerror("오류", f"알 수 없는 오류 발생:\n{e}")
+
+    
+    def do_login(self):
+
+        username = self.login_id.get().strip()
+        password = self.login_pw.get().strip()
+
+        ok, msg, user = login(username, password)
+
+        if not ok:
+            messagebox.showwarning("로그인 실패", msg)
+            return
+
+        profile = get_profile(user)
+        self.current_user = profile["username"]
+        self.current_user_id = user["id"]
+
+        messagebox.showinfo("환영합니다", f"{self.current_user}님 환영합니다!")
+        self.show_menu()
+
+=======
         init_db()
         self.current_analysis = None
         self.main_content = None
         self.show_menu()
     
+>>>>>>> dev
     def show_menu(self):
         if self.main_content: self.main_content.destroy()
         self.main_content = tk.Frame(self.root, bg=self.colors['bg'])
@@ -117,8 +246,14 @@ class MoodTrackerGUI:
     def create_history(self, parent):
         frame = tk.Frame(parent, bg=self.colors['bg'])
         frame.pack(fill=tk.BOTH, expand=True)
+<<<<<<< HEAD
+        tk.Label(frame, text="내가 쓴 일기", font=("맑은 고딕",16,"bold"),
+                bg=self.colors['bg'], fg=self.colors['text']).pack(pady=(0,15), anchor=tk.W, padx=5)
+
+=======
         tk.Label(frame, text="내가 쓴 일기", font=("맑은 고딕",16,"bold"), bg=self.colors['bg'], fg=self.colors['text']).pack(pady=(0,15), anchor=tk.W, padx=5)
         
+>>>>>>> dev
         board = tk.Frame(frame, bg='white', relief=tk.SOLID, bd=1)
         board.pack(fill=tk.BOTH, expand=True, pady=(0,12))
 
@@ -126,6 +261,47 @@ class MoodTrackerGUI:
         hdr.pack(fill=tk.X)
         hdr.pack_propagate(False)
         for txt, w in [("날짜",18), ("내용",0), ("감정",12)]:
+<<<<<<< HEAD
+            tk.Label(hdr, text=txt, font=("맑은 고딕",11,"bold"),
+                    bg=self.colors['accent'], fg='white',
+                    width=w, anchor=tk.W if txt=="날짜" else tk.CENTER).pack(
+                        side=tk.LEFT,
+                        fill=tk.X if txt=="내용" else None,
+                        expand=(txt=="내용"),
+                        padx=15 if txt!="내용" else 8
+                    )
+
+        lf = tk.Frame(board, bg='white')
+        lf.pack(fill=tk.BOTH, expand=True)
+
+        self.history_canvas = tk.Canvas(lf, bg='white', highlightthickness=0)
+        sb = ttk.Scrollbar(lf, orient="vertical", command=self.history_canvas.yview)
+        self.history_canvas.configure(yscrollcommand=sb.set)
+
+        # 위젯 하나만 생성 (중복 생성 X)
+        self.history_scrollable = tk.Frame(self.history_canvas, bg='white')
+        self.history_canvas.create_window((0,0), window=self.history_scrollable, anchor="nw")
+
+        # 스크롤 리사이징
+        self.history_scrollable.bind(
+            "<Configure>",
+            lambda e: self.history_canvas.configure(scrollregion=self.history_canvas.bbox("all"))
+        )
+
+        self.history_canvas.pack(side="left", fill="both", expand=True)
+        sb.pack(side="right", fill="y")
+
+        refresh_btn = tk.Button(frame, text="새로고침",
+                    font=("맑은 고딕",12,"bold"),
+                    bg=self.colors['button_bg'], fg='white',
+                    relief=tk.FLAT, width=16, pady=12,
+                    cursor="hand2",
+                    command=self.load_history)
+        refresh_btn.pack()
+
+        self.load_history()
+
+=======
             tk.Label(hdr, text=txt, font=("맑은 고딕",11,"bold"), bg=self.colors['accent'], fg='white', width=w, anchor=tk.W if txt=="날짜" else tk.CENTER).pack(side=tk.LEFT, fill=tk.X if txt=="내용" else None, expand=txt=="내용", padx=15 if txt!="내용" else 8)
 
         lf = tk.Frame(board, bg='white')
@@ -142,6 +318,7 @@ class MoodTrackerGUI:
         refresh_btn = tk.Button(frame, text="새로고침", font=("맑은 고딕",12,"bold"), bg=self.colors['button_bg'], fg='white', relief=tk.FLAT, width=16, pady=12, cursor="hand2", command=self.load_history, activebackground='#2980B9', bd=0)
         refresh_btn.pack()
         self.load_history()
+>>>>>>> dev
     
     def analyze_emotion(self):
         content = self.diary_text.get(1.0, tk.END).strip()
@@ -200,8 +377,13 @@ class MoodTrackerGUI:
             return
         
         try:
+<<<<<<< HEAD
+            date_str = datetime.now().strftime(f"%Y-%m-%d %H:%M:%S")
+            save_diary_to_db(self.current_user_id, date_str, content, self.current_analysis)
+=======
             date_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             save_diary_to_db(date_str, content, self.current_analysis)
+>>>>>>> dev
             messagebox.showinfo("완료", "일기가 저장되었습니다")
             self.show_menu()
         except Exception as e:
@@ -218,10 +400,20 @@ class MoodTrackerGUI:
         if hasattr(self,'status_label'): self.status_label.config(text="초기화 완료")
     
     def load_history(self):
+<<<<<<< HEAD
+        if not self.history_scrollable.winfo_exists():
+            return
+
+        for w in self.history_scrollable.winfo_children(): w.destroy()
+        
+        try:
+            diaries = get_all_diaries(self.current_user_id)
+=======
         for w in self.history_scrollable.winfo_children(): w.destroy()
         
         try:
             diaries = get_all_diaries()
+>>>>>>> dev
             
             if not diaries:
                 empty = tk.Frame(self.history_scrollable, bg='white')
@@ -244,7 +436,11 @@ class MoodTrackerGUI:
     
     def load_stats(self):
         try:
+<<<<<<< HEAD
+            all_diaries, emo_sum = get_diaries_for_stats(self.current_user_id)
+=======
             all_diaries, emo_sum = get_diaries_for_stats()
+>>>>>>> dev
             total = len(all_diaries)
             
             weekly_groups = []
