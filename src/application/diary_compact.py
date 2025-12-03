@@ -4,6 +4,7 @@ from datetime import datetime
 import threading, sys, os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 try:
     from ollama_analyzer import analyze_diary_with_custom_model
     HAS_ANALYZER = True
