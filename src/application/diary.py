@@ -9,7 +9,7 @@ try:
     HAS_ANALYZER = True
 except: HAS_ANALYZER = False
 
-from diary_db import init_db, save_diary_to_db, get_all_diaries, get_diaries_for_stats
+from diary_db import init_db, save_diary_to_db, get_all_diaries, get_diaries_for_stats, register_user, login_user, ValidationError, UserAlreadyExists
 
 class MoodTrackerGUI:
     def __init__(self, root):
@@ -34,11 +34,140 @@ class MoodTrackerGUI:
         
         self.colors = {'bg':'#EBF5FB','panel_bg':'#D6EAF8','text':'#1B4F72','text_dim':'#5499C7','button_bg':'#5DADE2','accent':'#3498DB'}
         self.root.configure(bg=self.colors['bg'])
-        self.user_id = "default_user"
+        self.user_id = None
         init_db()
         self.current_analysis = None
         self.main_content = None
-        self.show_menu()
+        self.show_login()
+    
+    def show_login(self):
+        """로그인 화면"""
+        if self.main_content: self.main_content.destroy()
+        self.main_content = tk.Frame(self.root, bg=self.colors['bg'])
+        self.main_content.pack(fill=tk.BOTH, expand=True)
+        
+        center = tk.Frame(self.main_content, bg=self.colors['bg'])
+        center.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+        
+        tk.Label(center, text="감정 분석 일기장", font=("맑은 고딕", 42, "bold"), 
+                bg=self.colors['bg'], fg=self.colors['accent']).pack(pady=(0, 15))
+
+        input_frame = tk.Frame(center, bg=self.colors['bg'])
+        input_frame.pack(pady=30)
+        
+        tk.Label(input_frame, text="아이디", font=("맑은 고딕", 16, "bold"), 
+                bg=self.colors['bg'], fg=self.colors['text'], width=10).grid(row=0, column=0, sticky=tk.E, pady=15, padx=15)
+        self.login_username = tk.Entry(input_frame, font=("맑은 고딕", 16), width=30, relief=tk.SOLID, bd=2)
+        self.login_username.grid(row=0, column=1, pady=15, padx=15)
+        
+        tk.Label(input_frame, text="비밀번호", font=("맑은 고딕", 16, "bold"), 
+                bg=self.colors['bg'], fg=self.colors['text'], width=10).grid(row=1, column=0, sticky=tk.E, pady=15, padx=15)
+        self.login_password = tk.Entry(input_frame, font=("맑은 고딕", 16), width=30, show="●", relief=tk.SOLID, bd=2)
+        self.login_password.grid(row=1, column=1, pady=15, padx=15)
+        self.login_password.bind('<Return>', lambda e: self.do_login())
+
+        btn_frame = tk.Frame(center, bg=self.colors['bg'])
+        btn_frame.pack(pady=40)
+        
+        login_btn = tk.Button(btn_frame, text="로그인", font=("맑은 고딕", 18, "bold"), 
+                             bg=self.colors['accent'], fg='white', relief=tk.FLAT, 
+                             width=15, pady=15, cursor="hand2", command=self.do_login, 
+                             activebackground='#2980B9', bd=0)
+        login_btn.pack(side=tk.LEFT, padx=10)
+        
+        register_btn = tk.Button(btn_frame, text="회원가입", font=("맑은 고딕", 18, "bold"), 
+                                bg=self.colors['button_bg'], fg='white', relief=tk.FLAT, 
+                                width=15, pady=15, cursor="hand2", command=self.show_register, 
+                                activebackground='#2980B9', bd=0)
+        register_btn.pack(side=tk.LEFT, padx=10)
+    
+    def show_register(self):
+        """회원가입 화면"""
+        if self.main_content: self.main_content.destroy()
+        self.main_content = tk.Frame(self.root, bg=self.colors['bg'])
+        self.main_content.pack(fill=tk.BOTH, expand=True)
+        
+        center = tk.Frame(self.main_content, bg=self.colors['bg'])
+        center.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+        
+        tk.Label(center, text="회원가입", font=("맑은 고딕", 42, "bold"), 
+                bg=self.colors['bg'], fg=self.colors['accent']).pack(pady=(0, 15))
+        tk.Label(center, text="새 계정을 만들어주세요", font=("맑은 고딕", 16), 
+                bg=self.colors['bg'], fg=self.colors['text_dim']).pack(pady=(0, 50))
+
+        input_frame = tk.Frame(center, bg=self.colors['bg'])
+        input_frame.pack(pady=30)
+        
+        tk.Label(input_frame, text="아이디", font=("맑은 고딕", 16, "bold"), 
+                bg=self.colors['bg'], fg=self.colors['text'], width=12).grid(row=0, column=0, sticky=tk.E, pady=15, padx=15)
+        self.reg_username = tk.Entry(input_frame, font=("맑은 고딕", 16), width=25, relief=tk.SOLID, bd=2)
+        self.reg_username.grid(row=0, column=1, pady=15, padx=15)
+        tk.Label(input_frame, text="3자 이상", font=("맑은 고딕", 11), 
+                bg=self.colors['bg'], fg=self.colors['text_dim']).grid(row=0, column=2, sticky=tk.W, padx=5)
+        
+        tk.Label(input_frame, text="비밀번호", font=("맑은 고딕", 16, "bold"), 
+                bg=self.colors['bg'], fg=self.colors['text'], width=12).grid(row=1, column=0, sticky=tk.E, pady=15, padx=15)
+        self.reg_password = tk.Entry(input_frame, font=("맑은 고딕", 16), width=25, show="●", relief=tk.SOLID, bd=2)
+        self.reg_password.grid(row=1, column=1, pady=15, padx=15)
+        tk.Label(input_frame, text="4자 이상", font=("맑은 고딕", 11), 
+                bg=self.colors['bg'], fg=self.colors['text_dim']).grid(row=1, column=2, sticky=tk.W, padx=5)
+        
+        tk.Label(input_frame, text="비밀번호 확인", font=("맑은 고딕", 16, "bold"), 
+                bg=self.colors['bg'], fg=self.colors['text'], width=12).grid(row=2, column=0, sticky=tk.E, pady=15, padx=15)
+        self.reg_password_confirm = tk.Entry(input_frame, font=("맑은 고딕", 16), width=25, show="●", relief=tk.SOLID, bd=2)
+        self.reg_password_confirm.grid(row=2, column=1, pady=15, padx=15)
+        self.reg_password_confirm.bind('<Return>', lambda e: self.do_register())
+        
+        btn_frame = tk.Frame(center, bg=self.colors['bg'])
+        btn_frame.pack(pady=40)
+        
+        register_btn = tk.Button(btn_frame, text="가입하기", font=("맑은 고딕", 18, "bold"), 
+                                bg=self.colors['accent'], fg='white', relief=tk.FLAT, 
+                                width=15, pady=15, cursor="hand2", command=self.do_register, 
+                                activebackground='#2980B9', bd=0)
+        register_btn.pack(side=tk.LEFT, padx=10)
+        
+        back_btn = tk.Button(btn_frame, text="로그인으로", font=("맑은 고딕", 18, "bold"), 
+                            bg=self.colors['button_bg'], fg='white', relief=tk.FLAT, 
+                            width=15, pady=15, cursor="hand2", command=self.show_login, 
+                            activebackground='#2980B9', bd=0)
+        back_btn.pack(side=tk.LEFT, padx=10)
+    
+    def do_login(self):
+        """로그인 처리"""
+        username = self.login_username.get().strip()
+        password = self.login_password.get()
+        
+        try:
+            user_id = login_user(username, password)
+            self.user_id = user_id
+            messagebox.showinfo("로그인", f"{username}님, 환영합니다")
+            self.show_menu()
+        except ValidationError as e:
+            messagebox.showerror("로그인 실패", str(e))
+        except Exception as e:
+            messagebox.showerror("오류", f"로그인 중 오류 발생:\n{e}")
+    
+    def do_register(self):
+        """회원가입 처리"""
+        username = self.reg_username.get().strip()
+        password = self.reg_password.get()
+        password_confirm = self.reg_password_confirm.get()
+        
+        if password != password_confirm:
+            messagebox.showerror("오류", "비밀번호가 일치하지 않습니다")
+            return
+        
+        try:
+            register_user(username, password)
+            messagebox.showinfo("가입 완료", "회원가입이 완료되었습니다!\n로그인 해주세요.")
+            self.show_login()
+        except ValidationError as e:
+            messagebox.showerror("가입 실패", str(e))
+        except UserAlreadyExists as e:
+            messagebox.showerror("가입 실패", str(e))
+        except Exception as e:
+            messagebox.showerror("오류", f"회원가입 중 오류 발생:\n{e}")
     
     def show_menu(self):
         if self.main_content: self.main_content.destroy()
@@ -49,7 +178,11 @@ class MoodTrackerGUI:
         center.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
         
         tk.Label(center, text="감정 분석 일기장", font=("맑은 고딕",32,"bold"), bg=self.colors['bg'], fg=self.colors['accent']).pack(pady=(0,10))
-        tk.Label(center, text="당신의 감정을 기록하고 분석합니다", font=("맑은 고딕",14), bg=self.colors['bg'], fg=self.colors['text_dim']).pack(pady=(0,40))
+        tk.Label(center, text=f"{self.user_id}님의 감정을 기록하고 분석합니다", font=("맑은 고딕",14), bg=self.colors['bg'], fg=self.colors['text_dim']).pack(pady=(0,10))
+        
+        logout_btn = tk.Button(center, text="로그아웃", font=("맑은 고딕",10), bg=self.colors['panel_bg'], fg=self.colors['text'], 
+                              relief=tk.FLAT, padx=15, pady=5, cursor="hand2", command=self.do_logout, bd=0)
+        logout_btn.pack(pady=(0,30))
         
         bf = tk.Frame(center, bg=self.colors['bg'])
         bf.pack()
@@ -58,6 +191,13 @@ class MoodTrackerGUI:
                                ("내가 쓴 일기", lambda:self.create_ui('history'), self.colors['button_bg'])]:
             btn = tk.Button(bf, text=text, font=("맑은 고딕",17,"bold"), bg=bg, fg='white', relief=tk.FLAT, width=22, pady=18, cursor="hand2", command=cmd, activebackground='#2980B9', activeforeground='white', bd=0, highlightthickness=0)
             btn.pack(pady=10)
+    
+    def do_logout(self):
+        """로그아웃 처리"""
+        self.user_id = None
+        self.current_analysis = None
+        messagebox.showinfo("로그아웃", "로그아웃 되었습니다")
+        self.show_login()
     
     def create_ui(self, tab='write'):
         if self.main_content: self.main_content.destroy()
