@@ -20,8 +20,16 @@ class MoodTrackerGUI:
             windll.shcore.SetProcessDpiAwareness(1)
         except: pass
         
-        w, h = 1400, 900
-        self.root.geometry(f"{w}x{h}+{(root.winfo_screenwidth()-w)//2}+{(root.winfo_screenheight()-h)//2}")
+        w, h = 1500, 1100
+        screen_width = root.winfo_screenwidth()
+        screen_height = root.winfo_screenheight()
+        x = (screen_width - w) // 2
+        y = (screen_height - h) // 2
+        
+        if y < 0: y = 0
+        if x < 0: x = 0
+        
+        self.root.geometry(f"{w}x{h}+{x}+{y}")
         self.root.minsize(1200, 800)
         
         self.colors = {'bg':'#EBF5FB','panel_bg':'#D6EAF8','text':'#1B4F72','text_dim':'#5499C7','button_bg':'#5DADE2','accent':'#3498DB'}
@@ -52,6 +60,7 @@ class MoodTrackerGUI:
     
     def create_ui(self, tab='write'):
         if self.main_content: self.main_content.destroy()
+        self.status_label = None
         self.main_content = tk.Frame(self.root, bg=self.colors['bg'])
         self.main_content.pack(fill=tk.BOTH, expand=True)
 
@@ -126,7 +135,8 @@ class MoodTrackerGUI:
         hdr.pack(fill=tk.X)
         hdr.pack_propagate(False)
         for txt, w in [("날짜",18), ("내용",0), ("감정",12)]:
-            tk.Label(hdr, text=txt, font=("맑은 고딕",11,"bold"), bg=self.colors['accent'], fg='white', width=w, anchor=tk.W if txt=="날짜" else tk.CENTER).pack(side=tk.LEFT, fill=tk.X if txt=="내용" else None, expand=txt=="내용", padx=15 if txt!="내용" else 8)
+            lbl = tk.Label(hdr, text=txt, font=("맑은 고딕",11,"bold"), bg=self.colors['accent'], fg='white', width=w, anchor=tk.W if txt=="날짜" else tk.CENTER)
+            lbl.pack(side=tk.LEFT, fill=tk.X if txt=="내용" else None, expand=txt=="내용", padx=15 if txt!="내용" else 8)
 
         lf = tk.Frame(board, bg='white')
         lf.pack(fill=tk.BOTH, expand=True)
@@ -134,7 +144,13 @@ class MoodTrackerGUI:
         sb = ttk.Scrollbar(lf, orient="vertical", command=self.history_canvas.yview)
         self.history_scrollable = tk.Frame(self.history_canvas, bg='white')
         self.history_scrollable.bind("<Configure>", lambda e: self.history_canvas.configure(scrollregion=self.history_canvas.bbox("all")))
-        self.history_canvas.create_window((0,0), window=self.history_scrollable, anchor="nw")
+        
+        frame_id = self.history_canvas.create_window((0,0), window=self.history_scrollable, anchor="nw")
+        
+        def _configure_canvas(event):
+            self.history_canvas.itemconfig(frame_id, width=event.width)
+        self.history_canvas.bind('<Configure>', _configure_canvas)
+        
         self.history_canvas.configure(yscrollcommand=sb.set)
         self.history_canvas.pack(side="left", fill="both", expand=True)
         sb.pack(side="right", fill="y")
@@ -215,7 +231,7 @@ class MoodTrackerGUI:
         self.result_text.config(state=tk.DISABLED)
         if hasattr(self,'result_title'): self.result_title.config(text="분석 결과")
         self.current_analysis = None
-        if hasattr(self,'status_label'): self.status_label.config(text="초기화 완료")
+        if getattr(self, 'status_label', None): self.status_label.config(text="초기화 완료")
     
     def load_history(self):
         for w in self.history_scrollable.winfo_children(): w.destroy()
@@ -226,19 +242,23 @@ class MoodTrackerGUI:
             if not diaries:
                 empty = tk.Frame(self.history_scrollable, bg='white')
                 empty.pack(fill=tk.BOTH, expand=True)
-                tk.Label(empty, text="저장된 일기가 없습니다", font=("맑은 고딕",12), bg='white', fg=self.colors['text_dim']).place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+                empty_label = tk.Label(empty, text="저장된 일기가 없습니다", font=("맑은 고딕",12), bg='white', fg=self.colors['text_dim'])
+                empty_label.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
             else:
                 for idx, (date, content, emotion) in enumerate(diaries):
                     bg = 'white' if idx%2==0 else self.colors['bg']
                     row = tk.Frame(self.history_scrollable, bg=bg, height=45)
                     row.pack(fill=tk.X)
                     row.pack_propagate(False)
-                    tk.Label(row, text=date.split()[0], font=("맑은 고딕",10), bg=bg, fg=self.colors['text'], width=18, anchor=tk.W).pack(side=tk.LEFT, padx=15)
+                    date_label = tk.Label(row, text=date.split()[0], font=("맑은 고딕",10), bg=bg, fg=self.colors['text'], width=18, anchor=tk.W)
+                    date_label.pack(side=tk.LEFT, padx=15)
                     preview = content[:50]+"..." if len(content)>50 else content
-                    tk.Label(row, text=preview, font=("맑은 고딕",10), bg=bg, fg=self.colors['text'], anchor=tk.W).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=8)
-                    tk.Label(row, text=emotion if emotion else "-", font=("맑은 고딕",10,"bold"), bg=self.colors['button_bg'] if emotion else bg, fg='white' if emotion else self.colors['text_dim'], width=12).pack(side=tk.LEFT, padx=15)
+                    content_label = tk.Label(row, text=preview, font=("맑은 고딕",10), bg=bg, fg=self.colors['text'], anchor=tk.W)
+                    content_label.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=8)
+                    emotion_label = tk.Label(row, text=emotion if emotion else "-", font=("맑은 고딕",10,"bold"), bg=self.colors['button_bg'] if emotion else bg, fg='white' if emotion else self.colors['text_dim'], width=12)
+                    emotion_label.pack(side=tk.LEFT, padx=15)
             
-            if hasattr(self,'status_label'): self.status_label.config(text="목록 로드 완료")
+            if getattr(self, 'status_label', None): self.status_label.config(text="목록 로드 완료")
         except Exception as e:
             messagebox.showerror("오류", f"로드 실패:\n{e}")
     
@@ -254,13 +274,21 @@ class MoodTrackerGUI:
                 total_int = 0
                 for _, date, emo, intensity in week:
                     if emo:
-                        emotions[emo] = emotions.get(emo,0)+1
-                        if intensity: total_int += intensity
+                        emotions[emo] = emotions.get(emo, 0) + 1
+                        if intensity:
+                            total_int += intensity
                 
                 if emotions:
-                    most = max(emotions.items(), key=lambda x:x[1])[0]
-                    avg_int = total_int/len(week) if total_int>0 else 0
-                    weekly_groups.append({'week_num':len(weekly_groups)+1,'count':len(week),'emotions':emotions,'most_common':most,'avg_intensity':avg_int,'dates':f"{week[-1][1].split()[0]} ~ {week[0][1].split()[0]}"})
+                    most = max(emotions.items(), key=lambda x: x[1])[0]
+                    avg_int = total_int / len(week) if total_int > 0 else 0
+                    weekly_groups.append({
+                        'week_num': len(weekly_groups) + 1,
+                        'count': len(week),
+                        'emotions': emotions,
+                        'most_common': most,
+                        'avg_intensity': avg_int,
+                        'dates': f"{week[-1][1].split()[0]} ~ {week[0][1].split()[0]}"
+                    })
             
             sf = tk.Frame(self.analysis_frame, bg='white', relief=tk.SOLID, bd=1)
             sf.pack(fill=tk.BOTH, expand=True)
@@ -269,31 +297,57 @@ class MoodTrackerGUI:
             sb = ttk.Scrollbar(sf, orient="vertical", command=canvas.yview)
             scrollable = tk.Frame(canvas, bg='white')
             scrollable.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-            canvas.create_window((0,0), window=scrollable, anchor="nw")
+            
+            frame_id = canvas.create_window((0, 0), window=scrollable, anchor="nw")
+            
+            def _configure_canvas(event):
+                canvas.itemconfig(frame_id, width=event.width)
+            canvas.bind('<Configure>', _configure_canvas)
+            
             canvas.configure(yscrollcommand=sb.set)
             canvas.pack(side="left", fill="both", expand=True)
             sb.pack(side="right", fill="y")
             
-            if total==0:
-                tk.Label(scrollable, text="작성된 일기가 없습니다", font=("맑은 고딕",12), bg='white', fg=self.colors['text_dim']).pack(expand=True)
+            if total == 0:
+                no_diary_label = tk.Label(scrollable, text="작성된 일기가 없습니다",
+                                         font=("맑은 고딕", 12), bg='white', fg=self.colors['text_dim'])
+                no_diary_label.pack(expand=True)
             else:
-                # Header cards - no padding
-                hdr = tk.Frame(scrollable, bg=self.colors['accent'], height=85)
+                hdr = tk.Frame(scrollable, bg=self.colors['accent'], height=100)
                 hdr.pack(fill=tk.X, padx=0, pady=0)
                 hdr.pack_propagate(False)
+                
                 stats = tk.Frame(hdr, bg=self.colors['accent'])
-                stats.pack(expand=True)
-                for lbl, val in [("총 일기",f"{total}개"),("분석 주차",f"{len(weekly_groups)}주"),("주요 감정",emo_sum[0][0] if emo_sum else "-")]:
-                    c = tk.Frame(stats, bg='white', width=300, height=75)
-                    c.pack(side=tk.LEFT, padx=10)
+                stats.pack(expand=True, fill=tk.X, pady=5)
+                stats.columnconfigure((0, 1, 2), weight=1)
+                
+                items = [
+                    ("총 일기 수", f"{total}개"),
+                    ("분석 주차", f"{len(weekly_groups)}주"),
+                    ("주요 감정", emo_sum[0][0] if emo_sum else "-")
+                ]
+                
+                for idx, (lbl, val) in enumerate(items):
+                    c = tk.Frame(stats, bg='white', height=90, padx=10, pady=5)
+                    c.grid(row=0, column=idx, sticky="nsew", padx=10)
                     c.pack_propagate(False)
-                    tk.Label(c, text=lbl, font=("맑은 고딕",14), bg='white', fg=self.colors['text_dim']).pack(pady=(12,2))
-                    tk.Label(c, text=val, font=("맑은 고딕",24,"bold"), bg='white', fg=self.colors['accent']).pack()
-
+                    
+                    label_title = tk.Label(c, text=lbl, font=("맑은 고딕", 14),
+                                          bg='white', fg=self.colors['text_dim'])
+                    label_title.pack(pady=(5, 2))
+                    
+                    label_value = tk.Label(c, text=val, font=("맑은 고딕", 24, "bold"),
+                                          bg='white', fg=self.colors['accent'])
+                    label_value.pack()
+                
                 if weekly_groups:
                     ws = tk.Frame(scrollable, bg='white')
-                    ws.pack(fill=tk.BOTH, padx=0, pady=0)
-                    tk.Label(ws, text="주간 감정 분석 (7개 단위)", font=("맑은 고딕",20,"bold"), bg='white', fg=self.colors['text']).pack(pady=(15,10), padx=15, anchor=tk.W)
+                    ws.pack(fill=tk.BOTH, expand=True, padx=0, pady=0)
+                    
+                    ws_title = tk.Label(ws, text="주간 감정 분석 (7개 단위)",
+                                       font=("맑은 고딕", 20, "bold"),
+                                       bg='white', fg=self.colors['text'])
+                    ws_title.pack(pady=(15, 10), padx=15, anchor=tk.W)
                     
                     for wd in weekly_groups:
                         card = tk.Frame(ws, bg=self.colors['panel_bg'], relief=tk.FLAT, bd=0)
@@ -302,42 +356,77 @@ class MoodTrackerGUI:
                         h = tk.Frame(card, bg=self.colors['accent'], height=60)
                         h.pack(fill=tk.X)
                         h.pack_propagate(False)
+                        
                         hc = tk.Frame(h, bg=self.colors['accent'])
                         hc.pack(fill=tk.BOTH, expand=True, padx=20, pady=12)
-                        tk.Label(hc, text=f"Week {wd['week_num']}", font=("맑은 고딕",15,"bold"), bg=self.colors['accent'], fg='white').pack(side=tk.LEFT)
-                        tk.Label(hc, text=f"{wd['dates']}  |  {wd['count']}개", font=("맑은 고딕",12), bg=self.colors['accent'], fg='white').pack(side=tk.LEFT, padx=25)
-                        tk.Label(hc, text=f"주요: {wd['most_common']}", font=("맑은 고딕",14,"bold"), bg='white', fg=self.colors['button_bg'], padx=18, pady=8).pack(side=tk.RIGHT)
+                        
+                        week_label = tk.Label(hc, text=f"Week {wd['week_num']}",
+                                             font=("맑은 고딕", 15, "bold"),
+                                             bg=self.colors['accent'], fg='white')
+                        week_label.pack(side=tk.LEFT)
+                        
+                        date_label = tk.Label(hc, text=f"{wd['dates']}  |  {wd['count']}개",
+                                             font=("맑은 고딕", 12),
+                                             bg=self.colors['accent'], fg='white')
+                        date_label.pack(side=tk.LEFT, padx=25)
+                        
+                        main_label = tk.Label(hc, text=f"주요: {wd['most_common']}",
+                                             font=("맑은 고딕", 14, "bold"),
+                                             bg='white', fg=self.colors['button_bg'],
+                                             padx=18, pady=8)
+                        main_label.pack(side=tk.RIGHT)
                         
                         chart = tk.Frame(card, bg='white', relief=tk.FLAT, bd=0)
                         chart.pack(fill=tk.X, padx=0, pady=0)
                         
                         max_cnt = max(wd['emotions'].values())
-                        for emo, cnt in sorted(wd['emotions'].items(), key=lambda x:x[1], reverse=True):
+                        
+                        for emo, cnt in sorted(wd['emotions'].items(), key=lambda x: x[1], reverse=True):
                             row = tk.Frame(chart, bg='white')
                             row.pack(fill=tk.X, padx=20, pady=8)
-                            emo_label = tk.Label(row, text=emo, font=("맑은 고딕",15,"bold"), bg=self.colors['button_bg'], fg='white', width=9, padx=15, pady=10, relief=tk.FLAT, bd=0)
-                            emo_label.pack(side=tk.LEFT, padx=(0,20))
-                            tk.Label(row, text=f"{cnt}회", font=("맑은 고딕",13), bg='white', width=6, anchor=tk.W).pack(side=tk.LEFT, padx=(0,20))
+                            
+                            emo_label = tk.Label(row, text=emo,
+                                                font=("맑은 고딕", 15, "bold"),
+                                                bg=self.colors['button_bg'], fg='white',
+                                                width=9, padx=15, pady=10)
+                            emo_label.pack(side=tk.LEFT, padx=(0, 20))
+                            
+                            cnt_label = tk.Label(row, text=f"{cnt}회",
+                                                font=("맑은 고딕", 13),
+                                                bg='white', width=6, anchor=tk.W)
+                            cnt_label.pack(side=tk.LEFT, padx=(0, 20))
                             
                             bar_bg = tk.Frame(row, bg='#E8E8E8', height=36)
-                            bar_bg.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0,20))
-                            bar = tk.Frame(bar_bg, bg=self.colors['accent'], height=36)
-                            bar.place(relx=0, rely=0, relwidth=cnt/max_cnt, relheight=1)
+                            bar_bg.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 20))
                             
-                            pct = (cnt/wd['count'])*100
-                            tk.Label(row, text=f"{pct:.0f}%", font=("맑은 고딕",13,"bold"), bg='white', fg=self.colors['accent'], width=6).pack(side=tk.LEFT)
+                            bar = tk.Frame(bar_bg, bg=self.colors['accent'], height=36)
+                            bar.place(relx=0, rely=0, relwidth=cnt / max_cnt, relheight=1)
+                            
+                            pct = (cnt / wd['count']) * 100
+                            pct_label = tk.Label(row, text=f"{pct:.0f}%",
+                                                font=("맑은 고딕", 13, "bold"),
+                                                bg='white', fg=self.colors['accent'], width=6)
+                            pct_label.pack(side=tk.LEFT)
                         
-                        if wd['avg_intensity']>0:
+                        if wd['avg_intensity'] > 0:
                             inf = tk.Frame(card, bg=self.colors['panel_bg'])
-                            inf.pack(fill=tk.X, padx=20, pady=(5,15))
-                            tk.Label(inf, text=f"평균 강도: {wd['avg_intensity']:.1f}/100", font=("맑은 고딕",12), bg=self.colors['panel_bg'], fg=self.colors['text']).pack(anchor=tk.W, pady=(0,8))
+                            inf.pack(fill=tk.X, padx=20, pady=(5, 15))
+                            
+                            intensity_label = tk.Label(inf, text=f"평균 강도: {wd['avg_intensity']:.1f}/100",
+                                                      font=("맑은 고딕", 12),
+                                                      bg=self.colors['panel_bg'], fg=self.colors['text'])
+                            intensity_label.pack(anchor=tk.W, pady=(0, 8))
+                            
                             bf = tk.Frame(inf, bg='#E8E8E8', height=20)
                             bf.pack(fill=tk.X)
+                            
                             bar = tk.Frame(bf, bg=self.colors['button_bg'], height=20)
-                            bar.place(relx=0, rely=0, relwidth=wd['avg_intensity']/100, relheight=1)
+                            bar.place(relx=0, rely=0, relwidth=wd['avg_intensity'] / 100, relheight=1)
         
         except Exception as e:
-            tk.Label(self.analysis_frame, text=f"통계 로드 오류:\n{e}", font=("맑은 고딕",11), bg=self.colors['bg'], fg='red').pack(expand=True)
+            error_label = tk.Label(self.analysis_frame, text=f"통계 로드 오류:\n{e}",
+                                  font=("맑은 고딕", 11), bg=self.colors['bg'], fg='red')
+            error_label.pack(expand=True)
 
 def main():
     root = tk.Tk()
