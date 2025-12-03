@@ -2,6 +2,10 @@ import sqlite3
 from pathlib import Path
 
 <<<<<<< HEAD
+DB_PATH = Path(__file__).parent.parent.parent / "data" / "mood_tracker.db"
+DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+=======
+<<<<<<< HEAD
 DB_PATH = "diary.db"
 
 class ValidationError(Exception):
@@ -16,10 +20,13 @@ def get_connection():
 DB_PATH = Path(__file__).parent.parent.parent / "data" / "mood_tracker.db"
 DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 >>>>>>> dev
+>>>>>>> 1ee3f16722c7635c8bef9047365e1db33d80b756
 
 def init_db():
     """데이터베이스 초기화 및 테이블 생성"""
     conn = sqlite3.connect(DB_PATH)
+<<<<<<< HEAD
+=======
 <<<<<<< HEAD
     conn.execute('''
         CREATE TABLE IF NOT EXISTS diaries (
@@ -84,6 +91,7 @@ def get_all_diaries(user_id):
         ORDER BY created_at DESC
     ''', (user_id,))
 =======
+>>>>>>> 1ee3f16722c7635c8bef9047365e1db33d80b756
     conn.execute('''CREATE TABLE IF NOT EXISTS diaries (
         id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT NOT NULL, content TEXT NOT NULL,
         primary_emotion TEXT, secondary_emotions TEXT, emotion_intensity INTEGER,
@@ -117,11 +125,16 @@ def get_all_diaries():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute('SELECT date,content,primary_emotion FROM diaries ORDER BY created_at DESC')
+<<<<<<< HEAD
+=======
 >>>>>>> dev
+>>>>>>> 1ee3f16722c7635c8bef9047365e1db33d80b756
     diaries = cursor.fetchall()
     conn.close()
     return diaries
 
+<<<<<<< HEAD
+=======
 <<<<<<< HEAD
 
 def get_diaries_for_stats(user_id):
@@ -148,6 +161,7 @@ def get_diaries_for_stats(user_id):
     conn.close()
     return all_diaries, emo_sum
 =======
+>>>>>>> 1ee3f16722c7635c8bef9047365e1db33d80b756
 def get_diaries_for_stats():
     """통계를 위한 일기 데이터 조회"""
     conn = sqlite3.connect(DB_PATH)
@@ -157,5 +171,9 @@ def get_diaries_for_stats():
     cursor.execute('SELECT primary_emotion,COUNT(*),AVG(emotion_intensity) FROM diaries WHERE primary_emotion IS NOT NULL GROUP BY primary_emotion ORDER BY COUNT(*) DESC')
     emo_sum = cursor.fetchall()
     conn.close()
+<<<<<<< HEAD
+    return all_diaries, emo_sum
+=======
     return all_diaries, emo_sum
 >>>>>>> dev
+>>>>>>> 1ee3f16722c7635c8bef9047365e1db33d80b756
