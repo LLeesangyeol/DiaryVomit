@@ -2,9 +2,19 @@ import tkinter as tk
 from tkinter import ttk, scrolledtext, messagebox
 from datetime import datetime
 import threading, sys, os
+import ollama
 
-# 상위 폴더 import 허용
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+os.environ["OLLAMA_HOST"] = "http://127.0.0.1:11434"
+
+def base_path():
+    if hasattr(sys, '_MEIPASS'):
+        # PyInstaller 실행 시 압축 풀린 임시 폴더
+        return sys._MEIPASS
+    # 개발 환경에서의 실제 파일 경로
+        # 일반 파이썬 실행 시 __file__ 기준
+    return os.path.dirname(os.path.abspath(__file__))
+
+sys.path.append(base_path())
 
 # Ollama 모델 불러오기 여부 확인
 try:
