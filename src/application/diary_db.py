@@ -1,5 +1,12 @@
 import sqlite3
 from pathlib import Path
+import os, sys
+
+def resource_path(relative_path):
+    """ PyInstaller 환경에서는 _MEIPASS 폴더로 접근 """
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
 
 DB_PATH = "diary.db"
 
