@@ -277,7 +277,7 @@ class MoodTrackerGUI:
 
         # 입력 필드
         content = tk.Frame(frame, bg=self.colors['bg'])
-        content.pack(fill=tk.BOTH, expand=True)
+        content.pack(fill=tk.BOTH, expand=3)
 
         tk.Label(content, text="오늘의 일기",
                  font=("맑은 고딕", 15, "bold"),
@@ -292,6 +292,7 @@ class MoodTrackerGUI:
             relief=tk.FLAT, padx=15, pady=15
         )
         self.diary_text.pack(fill=tk.BOTH, expand=True)
+        
         self.diary_text.insert(1.0, "오늘 하루를 기록해주세요...")
 
         self.result_title = tk.Label(content, text="분석 결과",
@@ -326,16 +327,16 @@ class MoodTrackerGUI:
             if HAS_ANALYZER:
                 result = analyze_diary_with_custom_model(content)
             else:
-                import time
-                time.sleep(2)
+                # import time
+                # time.sleep(2)
                 result = {
-                    'primary_emotion': '기쁨',
-                    'secondary_emotions': ['만족', '희망'],
-                    'emotion_intensity': 75,
-                    'analysis_score': 8,
-                    'keywords': ['친구', '즐거움'],
-                    'emotion_tags': ['긍정', '사교'],
-                    'summary': '전반적으로 긍정적인 하루였습니다.'
+                    'primary_emotion': '알 수 없음',
+                    'secondary_emotions': ['알 수 없음'],
+                    'emotion_intensity': 0,
+                    'analysis_score': 0,
+                    'keywords': ['알 수 없음'],
+                    'emotion_tags': ['알 수 없음'],
+                    'summary': '알 수 없음'
                 }
             self.root.after(0, self.display_analysis, result)
         except Exception as e:
@@ -499,7 +500,10 @@ class MoodTrackerGUI:
                          fg=('white' if emotion else self.colors['text_dim']),
                          width=12).pack(side=tk.LEFT, padx=10)
 
-            self.status_label.config(text="목록 로드 완료")
+                if getattr(self, "status_label", None) and self.status_label.winfo_exists():
+                    self.status_label.config(text="목록 로드 완료")
+
+
 
         except Exception as e:
             messagebox.showerror("오류", f"로드 실패:\n{e}")
@@ -636,7 +640,10 @@ class MoodTrackerGUI:
                              font=("맑은 고딕", 12, "bold"),
                              bg='white', fg=self.colors['accent'], width=5).pack(side=tk.LEFT)
 
-            self.status_label.config(text="통계 로드 완료")
+            
+            if getattr(self, "status_label", None) and self.status_label.winfo_exists():
+                self.status_label.config(text="목록 로드 완료")
+
 
         except Exception as e:
             messagebox.showerror("오류", f"통계 로드 실패:\n{e}")
